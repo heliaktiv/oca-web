@@ -5,3 +5,5 @@
 * Jose Mª Bernet <josemaria.bernet@guadaltech.es>
 * Simone Orsi <simone.orsi@camptocamp.com>
 * Dennis Sluijk <d.sluijk@onestein.nl>
+* Mladen Meseldzija <mladen.meseldzija@modoolar.com>
+* Aleksandar Gajic <aleksandar.gajic@modoolar.com>

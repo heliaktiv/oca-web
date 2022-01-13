@@ -6,7 +6,10 @@
 {
     "name": "Advanced search",
     "version": "13.0.1.0.0",
-    "author": "Therp BV, " "Tecnativa, " "Odoo Community Association (OCA)",
+    "author": "Therp BV, "
+    "Tecnativa, "
+    "Modoolar, "
+    "Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "category": "Usability",
     "summary": "Easier and more powerful searching tools",

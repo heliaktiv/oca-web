@@ -10,11 +10,12 @@ odoo.define("web_advanced_search", function(require) {
     var DomainSelectorDialog = require("web.DomainSelectorDialog");
     var field_registry = require("web.field_registry");
     var FieldManagerMixin = require("web.FieldManagerMixin");
-    var FiltersMenu = require("web.FiltersMenu");
+    var FiltersMenu = require("web.FilterMenu");
     var human_domain = require("web_advanced_search.human_domain");
-    var SearchView = require("web.SearchView");
+    var SearchView = require("web.ControlPanelController");
     var Widget = require("web.Widget");
-    var Char = core.search_filters_registry.get("char");
+    var search_filters_registry = require("web.search_filters_registry");
+    var Char = search_filters_registry.get("char");
 
     SearchView.include({
         custom_events: _.extend({}, SearchView.prototype.custom_events, {
@@ -30,7 +31,7 @@ odoo.define("web_advanced_search", function(require) {
          * @param {OdooEvent} event The target will get the dataset.
          */
         _on_get_dataset: function(event) {
-            event.target.dataset = this.dataset;
+            event.target.a_model = this.model;
             event.stopPropagation();
         },
     });
@@ -46,7 +47,6 @@ odoo.define("web_advanced_search", function(require) {
             this._super(parent);
             this.model = model;
             this.domain = new Domain(domain);
-            this.domain_array = domain;
         },
 
         /**
@@ -55,16 +55,13 @@ odoo.define("web_advanced_search", function(require) {
          * @returns {Object} In the format expected by `web.FiltersMenu`.
          */
         get_filter: function() {
+            var domain_array = this.domain.toArray();
             return {
                 attrs: {
-                    domain: this.domain_array,
+                    domain: domain_array,
                     // TODO Remove when merged
                     // https://github.com/odoo/odoo/pull/25922
-                    string: human_domain.getHumanDomain(
-                        this,
-                        this.model,
-                        this.domain_array
-                    ),
+                    string: human_domain.getHumanDomain(this, this.model, domain_array),
                 },
                 children: [],
                 tag: "filter",
@@ -98,7 +95,7 @@ odoo.define("web_advanced_search", function(require) {
         advanced_search_open: function() {
             var domain_selector_dialog = new DomainSelectorDialog(
                 this,
-                this.dataset.model,
+                this.a_model.modelName,
                 "[]",
                 {
                     debugMode: core.debug,
@@ -121,11 +118,28 @@ odoo.define("web_advanced_search", function(require) {
             _.invoke(this.propositions, "destroy");
             var proposition = new AdvancedSearchProposition(
                 this,
-                this.dataset.model,
+                this.a_model.modelName,
                 event.data.domain
             );
             this.propositions = [proposition];
-            this._commitSearch();
+
+            var filters = _.invoke(this.propositions, "get_filter").map(function(
+                preFilter
+            ) {
+                return preFilter.attrs.string.then(string => {
+                    return {
+                        type: "filter",
+                        description: string,
+                        domain: Domain.prototype.arrayToString(preFilter.attrs.domain),
+                    };
+                });
+            });
+            Promise.all(filters).then(all_filters => {
+                this.trigger_up("new_filters", {filters: all_filters});
+                _.invoke(this.propositions, "destroy");
+                this.propositions = [];
+                this._toggleCustomFilterMenu();
+            });
         },
     });
 
@@ -166,8 +180,8 @@ odoo.define("web_advanced_search", function(require) {
             // Create dummy record with only the field the user is searching
             var params = {
                 fieldNames: [this.field.name],
-                modelName: this.dataset.model,
-                context: this.dataset.context,
+                modelName: this.model,
+                context: this.field.context,
                 fields: {},
                 type: "record",
                 viewType: "default",
@@ -202,7 +216,7 @@ odoo.define("web_advanced_search", function(require) {
         start: function() {
             var result = this._super.apply(this, arguments);
             // Render the initial widget
-            result.done($.proxy(this, "show_inputs", $("<input value='='/>")));
+            result.then($.proxy(this, "show_inputs", $("<input value='='/>")));
             return result;
         },
 
@@ -330,12 +344,11 @@ odoo.define("web_advanced_search", function(require) {
                     return "";
                 }
             }
-            return this._super.apply(this, arguments);
         },
     });
 
     // Register search filter widgets
-    core.search_filters_registry
+    search_filters_registry
         .add("many2many", Relational)
         .add("many2one", Relational)
         .add("one2many", Relational);

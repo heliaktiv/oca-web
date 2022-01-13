@@ -27,7 +27,7 @@ odoo.define("web_advanced_search.human_domain", function(require) {
         },
 
         DomainSelector: function() {
-            var result = human_domain_methods.DomainTree.apply(this, arguments);
+            var result = human_domain_methods.DomainTree.apply(this);
             // Remove surrounding parenthesis
             return result.slice(1, -1);
         },
@@ -59,11 +59,12 @@ odoo.define("web_advanced_search.human_domain", function(require) {
     function getHumanDomain(parent, model, domain, options) {
         var domain_selector = new DomainSelector(parent, model, domain, options);
         var dummy_parent = $("<div>");
-        domain_selector.appendTo(dummy_parent);
-        var result = human_domain_methods.DomainSelector.apply(domain_selector);
-        domain_selector.destroy();
-        dummy_parent.destroy();
-        return result;
+        return domain_selector.appendTo(dummy_parent).then(() => {
+            var result = human_domain_methods.DomainSelector.apply(domain_selector);
+            domain_selector.destroy();
+            dummy_parent.remove();
+            return result;
+        });
     }
 
     return {

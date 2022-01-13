@@ -2,10 +2,73 @@
 <!-- Copyright 2017-2018 Jairo Llopis <jairo.llopis@tecnativa.com>
      License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
 <templates>
-    <t t-extend="FiltersMenuGenerator">
-        <t t-jquery=".o_add_filter_menu" t-operation="after">
-            <div role="separator" class="dropdown-divider" />
-            <a class="dropdown-item o_add_advanced_search">Add Advanced Filter</a>
+    <t t-extend="FilterMenuGenerator">
+        <t t-jquery="div.dropdown-divider" t-operation="replace">
+            <div
+                t-if="Object.keys(widget.fields).length !== 0 &amp;&amp; widget.items.length !== 0"
+                role="separator"
+                class="dropdown-divider o_generator_menu o_hidden"
+            />
+        </t>
+        <t t-jquery="button.o_add_custom_filter" t-operation="replace">
+            <button
+                t-if="Object.keys(widget.fields).length !== 0"
+                type="button"
+                class="dropdown-item o_generator_menu o_add_custom_filter o_hidden"
+                aria-expanded="false"
+            >Add Custom Filter</button>
+        </t>
+        <t t-jquery="div.o_add_filter_menu" t-operation="replace">
+            <div
+                t-if="widget.generatorMenuIsOpen"
+                class="dropdown-item-text o_generator_menu o_add_filter_menu o_hidden"
+            >
+                <button
+                    class="btn btn-primary o_apply_filter o_hidden"
+                    type="button"
+                >Apply</button>
+                <button
+                    class="btn btn-secondary o_add_condition o_hidden"
+                    type="button"
+                >
+                    <span class="fa fa-plus-circle o_hidden" />
+                    Add a condition
+                </button>
+            </div>
+        </t>
+        <t t-jquery="div.o_add_filter_menu" t-operation="after">
+            <div role="separator" class="dropdown-divider o_generator_menu" />
+            <button
+                type="button"
+                class="dropdown-item o_add_advanced_search o_generator_menu"
+            >Add Advanced Filter</button>
+        </t>
+    </t>
+    <t t-extend="SearchView.extended_search.proposition">
+        <t t-jquery="div.o_filter_condition" t-operation="replace">
+            <div role="menuitem" class="dropdown-item-text o_filter_condition o_hidden">
+                <span class="o_or_filter">or</span>
+                <span>
+                    <select class="o_input o_searchview_extended_prop_field">
+                        <t t-foreach="widget.attrs.fields" t-as="field">
+                            <option
+                                t-att="{'selected': field === widget.attrs.selected ? 'selected' : null}"
+                                t-att-value="field.name"
+                            >
+                                <t t-esc="field.string" />
+                            </option>
+                        </t>
+                    </select>
+                    <span
+                        class="o_searchview_extended_delete_prop fa fa-trash-o"
+                        role="img"
+                        aria-label="Delete"
+                        title="Delete"
+                    />
+                </span>
+                <select class="o_input o_searchview_extended_prop_op" />
+                <span class="o_searchview_extended_prop_value" />
+            </div>
         </t>
     </t>
 </templates>
